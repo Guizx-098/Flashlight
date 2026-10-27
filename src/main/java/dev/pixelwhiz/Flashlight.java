@@ -1,9 +1,9 @@
 package dev.pixelwhiz;
 
-import cn.nukkit.Server;
-import cn.nukkit.item.Item;
-import cn.nukkit.plugin.PluginBase;
-import cn.nukkit.utils.Config;
+import org.powernukkitx.Server;
+import org.powernukkitx.item.Item;
+import org.powernukkitx.plugin.PluginBase;
+import org.powernukkitx.utils.Config;
 import dev.pixelwhiz.listener.EventListener;
 import dev.pixelwhiz.utils.LightLevelCalculator;
 

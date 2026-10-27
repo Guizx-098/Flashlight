@@ -1,15 +1,16 @@
 package dev.pixelwhiz.task;
 
-import cn.nukkit.Player;
-import cn.nukkit.Server;
-import cn.nukkit.block.Block;
-import cn.nukkit.block.BlockLiquid;
-import cn.nukkit.item.Item;
-import cn.nukkit.level.Location;
-import cn.nukkit.level.Position;
-import cn.nukkit.math.BlockVector3;
-import cn.nukkit.network.protocol.UpdateBlockPacket;
-import cn.nukkit.scheduler.Task;
+import org.powernukkitx.Player;
+import org.powernukkitx.block.Block;
+import org.powernukkitx.block.BlockLiquid;
+import org.powernukkitx.item.Item;
+import org.powernukkitx.level.Position;
+import org.powernukkitx.math.BlockVector3;
+import org.powernukkitx.scheduler.Task;
+import org.cloudburstmc.math.vector.Vector3i;
+import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket;
+import org.powernukkitx.utils.RuntimeBlockDefinition;
+
 import dev.pixelwhiz.listener.InventoryListener;
 import dev.pixelwhiz.utils.LightLevelCalculator;
 
@@ -18,12 +19,10 @@ public class FlashlightTask extends Task {
     private int lightLevel = 0;
     private Position pos = null;
 
-    public Player player;
-
-    public boolean requireLightLevelUpdate = false;
+    public final Player player;
+    public volatile boolean requireLightLevelUpdate = true;
 
     public FlashlightTask(Player player) {
-        this.requestLightLevelUpdate();
         this.player = player;
 
         InventoryListener listener = new InventoryListener(this);
@@ -33,142 +32,141 @@ public class FlashlightTask extends Task {
 
     @Override
     public void onRun(int currentTick) {
-        if (this.player.isClosed() || !this.player.isConnected()) {
-            this.getHandler().cancel();
+        if (player.isClosed() || !player.isConnected()) {
+            restoreBlock();
+            if (getHandler() != null) {
+                getHandler().cancel();
+            }
             return;
         }
 
-        if (this.requireLightLevelUpdate) {
-            this.setLightLevel(Math.max(
-                    LightLevelCalculator.calc(player.getInventory().getItemInHand()),
-                    LightLevelCalculator.calc(player.getOffhandInventory().getItem(0))
-            ));
+        if (requireLightLevelUpdate) {
+            Item main = player.getInventory().getItemInMainHand();
+            Item off = player.getInventory().getItemInOffhand();
 
-            this.requireLightLevelUpdate = false;
+            int level = Math.max(
+                LightLevelCalculator.calc(main),
+                LightLevelCalculator.calc(off)
+            );
+
+            requireLightLevelUpdate = false;
+            setLightLevel(level);
         }
 
-        if (this.lightLevel <= 0) {
+        if (lightLevel <= 0) {
             return;
         }
 
-        Position pos = player.getPosition();
-        Position newPos = Position.fromObject(pos.add(0.5, 1, 0.5).floor(), pos.getLevel());
-        if (this.pos == null || !this.pos.equals(newPos)) {
-            this.restoreBlock();
-            this.pos = newPos;
-            this.overrideBlock();
+        Position current = player.getPosition();
+        Position next = Position.fromObject(
+            current.add(0.5, 1, 0.5).floor(),
+            current.getLevel()
+        );
+
+        if (pos == null || !pos.equals(next)) {
+            restoreBlock();
+            pos = next;
+            overrideBlock();
+        }
+    }
+
+    private void sendBlockLayers(Position position, Block base, Block second) {
+        if (position == null || !player.isConnected()) {
+            return;
         }
 
+        Vector3i vector = Vector3i.from(
+            position.getFloorX(),
+            position.getFloorY(),
+            position.getFloorZ()
+        );
+
+        sendBlock(position, vector, base, 0);
+        sendBlock(position, vector, second, 1);
+    }
+
+    private void sendBlock(
+        Position position,
+        Vector3i vector,
+        Block block,
+        int layer
+    ) {
+        UpdateBlockPacket packet = new UpdateBlockPacket();
+        packet.setBlockPosition(vector);
+        packet.setDefinition(new RuntimeBlockDefinition(block.getRuntimeId()));
+        packet.setLayer(layer);
+        player.sendPacket(packet);
     }
 
     private void restoreBlock() {
-        if (this.pos == null) {
+        if (pos == null) {
             return;
         }
 
-        sendBlockLayers(this.pos.getLocation(), this.pos.getLevel().getBlock(this.pos), Block.get(Block.AIR));
+        Position old = pos;
+        pos = null;
+
+        Block base = old.getLevelBlockAtLayer(0);
+        Block second = old.getLevelBlockAtLayer(1);
+
+        if (base == null) {
+            base = Block.get("minecraft:air");
+        }
+        if (second == null) {
+            second = Block.get("minecraft:air");
+        }
+
+        sendBlockLayers(old, base, second);
     }
 
+    @Override
     public void onCancel() {
-        this.restoreBlock();
+        restoreBlock();
     }
 
-    private static void sendBlockLayers(Location pos, Block normalLayer, Block liquidLayer) {
-        BlockVector3 blockPos = new BlockVector3(pos.getFloorX(), pos.getFloorY(), pos.getFloorZ());
-
-        UpdateBlockPacket normalPacket = new UpdateBlockPacket();
-        normalPacket.x = blockPos.getX();
-        normalPacket.y = blockPos.getY();
-        normalPacket.z = blockPos.getZ();
-        normalPacket.blockRuntimeId = normalLayer.getRuntimeId();
-        normalPacket.flags = UpdateBlockPacket.FLAG_ALL_PRIORITY;
-        normalPacket.dataLayer = 0;
-
-        UpdateBlockPacket liquidPacket = new UpdateBlockPacket();
-        liquidPacket.x = blockPos.getX();
-        liquidPacket.y = blockPos.getY();
-        liquidPacket.z = blockPos.getZ();
-        liquidPacket.blockRuntimeId = liquidLayer.getRuntimeId();
-        liquidPacket.flags = UpdateBlockPacket.FLAG_ALL_PRIORITY;
-        liquidPacket.dataLayer = 1;
-
-        for (Player player : Server.getInstance().getOnlinePlayers().values()) {
-            player.dataPacket(normalPacket);
-            player.dataPacket(liquidPacket);
-        }
-    }
-
-    public Block getLightLevelBlock(int lightLevel) {
-        switch (lightLevel) {
-            case 0:
-                return Block.get(Block.LIGHT_BLOCK_0);
-            case 1:
-                return Block.get(Block.LIGHT_BLOCK_1);
-            case 2:
-                return Block.get(Block.LIGHT_BLOCK_2);
-            case 3:
-                return Block.get(Block.LIGHT_BLOCK_3);
-            case 4:
-                return Block.get(Block.LIGHT_BLOCK_4);
-            case 5:
-                return Block.get(Block.LIGHT_BLOCK_5);
-            case 6:
-                return Block.get(Block.LIGHT_BLOCK_6);
-            case 7:
-                return Block.get(Block.LIGHT_BLOCK_7);
-            case 8:
-                return Block.get(Block.LIGHT_BLOCK_8);
-            case 9:
-                return Block.get(Block.LIGHT_BLOCK_9);
-            case 10:
-                return Block.get(Block.LIGHT_BLOCK_10);
-            case 11:
-                return Block.get(Block.LIGHT_BLOCK_11);
-            case 12:
-                return Block.get(Block.LIGHT_BLOCK_12);
-            case 13:
-                return Block.get(Block.LIGHT_BLOCK_13);
-            case 14:
-                return Block.get(Block.LIGHT_BLOCK_14);
-            case 15:
-                return Block.get(Block.LIGHT_BLOCK_15);
-        }
-
-        return Block.get(Block.LIGHT_BLOCK_0);
+    private Block getLightLevelBlock(int level) {
+        int safeLevel = Math.max(0, Math.min(15, level));
+        return Block.get("minecraft:light_block_" + safeLevel);
     }
 
     private void overrideBlock() {
-        if (this.pos == null) {
+        if (pos == null || lightLevel <= 0) {
             return;
         }
 
-        Item handItem = player.getInventory().getItemInHand();
-        Item offHandItem = player.getInventory().getItemInHand();
-        if (handItem.getBlock().getLightLevel() > 0 || offHandItem.getBlock().getLightLevel() > 0) {
-            Block normalLayer = this.pos.level.getBlock(this.pos);
-            Block liquidLayer = this.getLightLevelBlock(this.lightLevel);
-            if (normalLayer instanceof BlockLiquid) {
-                Block temp = normalLayer;
-                normalLayer = liquidLayer;
-                liquidLayer = temp;
-            }
+        Block base = pos.getLevelBlockAtLayer(0);
+        Block second = getLightLevelBlock(lightLevel);
 
-            sendBlockLayers(this.pos.getLocation(), normalLayer, liquidLayer);
+        if (base == null) {
+            base = Block.get("minecraft:air");
         }
+
+        if (base instanceof BlockLiquid) {
+            Block temp = base;
+            base = second;
+            second = temp;
+        }
+
+        sendBlockLayers(pos, base, second);
     }
 
     public void requestLightLevelUpdate() {
-        this.requireLightLevelUpdate = true;
+        requireLightLevelUpdate = true;
     }
 
-    private void setLightLevel(int lightLevel) {
-        int newLightLevel = Math.max(0, lightLevel & 0xf - 1);
-        if (this.lightLevel == newLightLevel) {
+    private void setLightLevel(int level) {
+        int nextLevel = Math.max(0, Math.min(15, level));
+
+        if (lightLevel == nextLevel) {
             return;
         }
 
-        this.lightLevel = newLightLevel;
-        this.overrideBlock();
-    }
+        lightLevel = nextLevel;
 
+        if (lightLevel <= 0) {
+            restoreBlock();
+        } else {
+            overrideBlock();
+        }
+    }
 }

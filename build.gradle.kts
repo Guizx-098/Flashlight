@@ -20,7 +20,7 @@ repositories {
 
 
 dependencies {
-    compileOnly("com.github.PowerNukkitX:PowerNukkitX:master-SNAPSHOT")
+    compileOnly(files("/root/pnx/powernukkitx.jar"))
     compileOnly("org.projectlombok:lombok:1.18.30")
     annotationProcessor("org.projectlombok:lombok:1.18.30")
 }

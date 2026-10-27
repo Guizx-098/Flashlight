@@ -1,10 +1,10 @@
 package dev.pixelwhiz.listener;
 
-import cn.nukkit.inventory.Inventory;
-import cn.nukkit.item.Item;
+import org.powernukkitx.inventory.Inventory;
+import org.powernukkitx.item.Item;
 import dev.pixelwhiz.task.FlashlightTask;
 
-public class InventoryListener implements cn.nukkit.inventory.InventoryListener {
+public class InventoryListener implements org.powernukkitx.inventory.InventoryListener {
 
     public FlashlightTask task;
 

@@ -1,66 +1,52 @@
-# 🔦 Flashlight Plugin for PowerNukkitX
+# 🔦 Flashlight — Edição Kugo
 
-A dynamic lighting solution that lets players illuminate their surroundings using various items! Perfect for cave explorations and nighttime adventures.
+Uma versão modificada do plugin Flashlight, adaptada por **Kugo** para servidores Minecraft Bedrock que utilizam PowerNukkitX.
 
-<img src="assets/icon.png" width="250" height="250">
+O projeto passou por alterações no código-fonte para adaptar seu funcionamento à API do PowerNukkitX, com ajustes na compilação, no processamento de eventos e no sistema de iluminação.
 
-## Table of Contents
-- [Features](#features)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Preview](#preview)
-- [Contributing](#contributing)
-- [License](#license)
+## ✨ Sobre o projeto
 
-## Features <a name="features"></a>
-- **Item-Based Lighting** - Use any item as a light source
-- **Custom Light Levels** - Configure brightness per item (0-15)
-- **Dual Wield Support** - Works with both main hand and offhand
-- **Smooth Updates** - Configurable refresh rate for optimal performance
-- **Automatic Cleanup** - Removes light blocks when not needed
-- **PowerNukkitX Optimized** - Built specifically for PNX's API
+O Flashlight permite criar iluminação temporária ao redor do jogador utilizando itens reconhecidos pelo plugin. Esta versão reúne modificações feitas durante o processo de adaptação e testes no PowerNukkitX.
 
-## Installation <a name="installation"></a>
-1. Download latest `Flashlight.jar` from [Releases]()
-2. Place in your server's `plugins/` folder
-3. Restart server
+## 🚀 Recursos
 
-## Configuration (`config.yml`) <a name="configuration"></a>
-```yaml
-# Main configuration file for Flashlight
-# Some of these settings are safe, others can break your server if modified incorrectly
-# New settings/defaults won't appear automatically in this file when upgrading.
+- **Iluminação dinâmica:** criação de iluminação temporária ao redor do jogador.
+- **Cálculo de luminosidade:** processamento dos níveis de luz dos itens compatíveis.
+- **Atualização periódica:** atualização da iluminação conforme a configuração do plugin.
+- **Limpeza automática:** remoção da iluminação temporária quando ela deixa de ser necessária.
+- **Adaptações para PowerNukkitX:** alterações no código para compatibilidade com a API utilizada.
+- **Eventos e inventário:** ajustes no processamento dos eventos relacionados ao funcionamento do plugin.
 
-# Flashlight update delay [float: seconds] (default: 0.25)
-# It is recommended to be as high as possible. Lower = more CPU, check more often
-update-delay: 0.25
+A disponibilidade de cada recurso depende da implementação e da configuração da versão instalada.
 
-# Light level of items [int] (min: 0, max: 15)
-# It supports for set the light level of an item that is not automatically calculated (such as a lava bucket) or a custom items.
-# Item name format is same as the item name of the /give command.
-# example) lava_bucket (same as '325:10')
-item-light-levels:
-  'lava-bucket': 15
-  #'nether_star': 10
-```
+## 📥 Instalação
 
+1. Baixe o arquivo `Flashlight.jar` na seção Releases deste repositório.
+2. Copie o arquivo para a pasta `plugins/` do servidor PowerNukkitX.
+3. Reinicie o servidor.
+4. Verifique o console para confirmar que o plugin foi carregado corretamente.
 
-## Preview <a name="preview"></a> 
+## 🛠️ Compilação
 
-[![preview1](assets/preview1.png)]()
-[![preview1](assets/preview2.png)]()
-[![preview1](assets/preview3.png)]()
+Requisitos:
+- Java 21.
+- PowerNukkitX compatível com a API declarada no `plugin.yml`.
+- Gradle Wrapper incluído no projeto.
 
-## Contributing <a name="contributing"></a>
+Para compilar, execute na pasta do projeto:
 
-All kinds of contribution are welcome
-- Send feedbacks.
-- Submit bug reports.
-- Write / Edit the documents.
-- Fix bugs or add new features.
+`./gradlew clean build --no-daemon`
 
-and if you found bug or have any issues please report them [here](https://github.com/pixelwhiz/Flashlight/issues/new)
+O arquivo JAR compilado deverá estar em `build/libs/`.
 
-## License <a name="license"></a>
+## 👨‍💻 Créditos
 
-This project is licensed under LGPL-3.0. Please see [LICENSE](LICENSE) file for details.
+**Responsável pelas modificações desta versão:** Kugo.
+
+**Projeto original:** [Flashlight — pixelwhiz](https://github.com/pixelwhiz/Flashlight).
+
+Esta edição contém alterações realizadas por Kugo sobre o projeto original. Os créditos e os direitos relativos ao trabalho original permanecem com seus respectivos titulares.
+
+## 📄 Licença
+
+A licença do projeto-base é mantida conforme o arquivo `LICENSE` incluído neste repositório. Consulte esse arquivo para conhecer os termos aplicáveis.

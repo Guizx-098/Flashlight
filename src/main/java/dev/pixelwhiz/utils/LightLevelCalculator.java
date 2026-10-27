@@ -1,6 +1,6 @@
 package dev.pixelwhiz.utils;
 
-import cn.nukkit.item.Item;
+import org.powernukkitx.item.Item;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 public final class LightLevelCalculator {
